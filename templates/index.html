@@ -1,0 +1,760 @@
+<title>TikTok Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+/* ─── Design tokens ─── dark-first, single-theme intentional */
+:root {
+  --bg:        #0c0c10;
+  --surface:   #141418;
+  --card:      #1a1a22;
+  --border:    #252530;
+  --border-hi: #32323f;
+  --fg:        #e8e8ed;
+  --fg-muted:  #7a7a8c;
+  --fg-dim:    #444455;
+
+  --red:       #fe2c55;
+  --red-soft:  rgba(254,44,85,.10);
+  --red-hover: #e0254b;
+  --cyan:      #25f4ee;
+  --cyan-soft: rgba(37,244,238,.10);
+  --warn:      #ff6b35;
+
+  --radius:    12px;
+  --radius-sm: 8px;
+
+  color-scheme: dark;
+}
+
+/* ─── Base ─── */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100%;
+  line-height: 1.5;
+  padding-left:  max(16px, env(safe-area-inset-left,  0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+}
+
+/* ─── Layout ─── */
+.shell {
+  max-width: 740px;
+  margin: 0 auto;
+  padding-block: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ─── Header ─── */
+.header {
+  text-align: center;
+  padding-bottom: 0.5rem;
+}
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--red);
+  border-radius: 8px;
+  display: grid; place-items: center;
+}
+.logo-icon svg { display: block; }
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.header h1 em { font-style: normal; color: var(--red); }
+.header .sub {
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* ─── Cards ─── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+.card-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted);
+  margin-bottom: 1rem;
+}
+
+/* ─── URL input ─── */
+.url-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.url-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.url-input:focus { border-color: var(--red); }
+.url-input::placeholder { color: var(--fg-dim); }
+
+/* ─── Buttons ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+  user-select: none;
+}
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+.btn-primary  { background: var(--red); color: #fff; }
+.btn-primary:hover:not(:disabled)  { background: var(--red-hover); }
+
+.btn-secondary { background: var(--border); color: var(--fg); }
+.btn-secondary:hover:not(:disabled) { background: var(--border-hi); }
+
+.btn-danger {
+  background: transparent;
+  color: #ff4757;
+  border: 1px solid #ff4757;
+}
+.btn-danger:hover:not(:disabled) { background: rgba(255,71,87,.12); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--fg-muted);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover:not(:disabled) { color: var(--fg); border-color: var(--border-hi); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* ─── Services grid ─── */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.65rem;
+}
+.svc {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 0.75rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s, opacity 0.15s;
+  position: relative;
+}
+.svc:hover:not(.offline):not(.selected) { border-color: var(--border-hi); }
+.svc:active:not(.offline) { transform: scale(0.97); }
+.svc.selected {
+  border-color: var(--red);
+  background: var(--red-soft);
+}
+.svc.offline { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.svc.loading { pointer-events: none; }
+
+.svc-icon {
+  width: 32px; height: 32px;
+  margin: 0 auto 0.5rem;
+  border-radius: 50%;
+  background: var(--surface);
+  display: grid; place-items: center;
+  transition: background 0.15s;
+}
+.svc.selected .svc-icon { background: var(--red-soft); }
+.svc.online .svc-icon   { }
+
+.svc-name {
+  font-weight: 600;
+  font-size: 0.82rem;
+  margin-bottom: 0.3rem;
+}
+.svc-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.badge-online  { color: var(--cyan); }
+.badge-offline { color: #ff4757; }
+.badge-loading { color: var(--fg-muted); }
+
+/* ─── Status ─── */
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--fg-dim);
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.dot.idle    { background: var(--fg-dim); }
+.dot.ready   { background: var(--cyan);   box-shadow: 0 0 7px var(--cyan); }
+.dot.running {
+  background: var(--red);
+  box-shadow: 0 0 7px var(--red);
+  animation: pulse 1.3s ease-in-out infinite;
+}
+.dot.waiting { background: var(--warn); box-shadow: 0 0 7px var(--warn); }
+
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* Counter pill */
+.counter-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--red-soft);
+  border: 1px solid rgba(254,44,85,.2);
+  border-radius: 20px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.counter-pill.visible { opacity: 1; }
+.counter-pill svg { flex-shrink: 0; }
+
+/* ─── Logs ─── */
+.logs {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  height: 190px;
+  overflow-y: auto;
+  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  line-height: 1.65;
+  scroll-behavior: smooth;
+}
+.logs::-webkit-scrollbar { width: 5px; }
+.logs::-webkit-scrollbar-track { background: transparent; }
+.logs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.log-line { margin-bottom: 0.1rem; }
+.log-ok   { color: var(--cyan); }
+.log-info { color: var(--fg-muted); }
+.log-warn { color: var(--warn); }
+.log-err  { color: #ff4757; }
+
+/* ─── Cooldown bar ─── */
+.cooldown-wrap {
+  margin-top: 0.75rem;
+  display: none;
+}
+.cooldown-wrap.visible { display: block; }
+.cooldown-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  margin-bottom: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+.cooldown-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cooldown-fill {
+  height: 100%;
+  background: var(--warn);
+  border-radius: 2px;
+  transition: width 1s linear;
+}
+
+/* ─── Toast system ─── */
+#toast-container {
+  position: fixed;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  right: max(1.5rem, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 999;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  min-width: 200px;
+  max-width: 320px;
+  pointer-events: auto;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+}
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast.hide { transform: translateX(120%); opacity: 0; transition: transform 0.25s ease-in, opacity 0.25s; }
+.toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.toast-dot.ok   { background: var(--cyan); box-shadow: 0 0 5px var(--cyan); }
+.toast-dot.err  { background: #ff4757; }
+.toast-dot.info { background: var(--warn); }
+
+/* ─── Footer ─── */
+footer {
+  text-align: center;
+  color: var(--fg-dim);
+  font-size: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+/* ─── Shimmer on service icons while loading ─── */
+@keyframes shimmer {
+  0%   { opacity: 0.3; }
+  50%  { opacity: 0.8; }
+  100% { opacity: 0.3; }
+}
+.svc.loading .svc-icon { animation: shimmer 1.2s ease-in-out infinite; }
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+  .shell { padding-block: 1.5rem; gap: 1rem; }
+  .header h1 { font-size: 1.4rem; }
+  .url-row { flex-direction: column; }
+  .services-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .card { padding: 1.1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot, .toast, .svc, .btn, .cooldown-fill { transition: none; animation: none; }
+}
+</style>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<div class="shell">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.19 8.19 0 004.79 1.52V6.76a4.85 4.85 0 01-1.02-.07z" fill="white"/>
+        </svg>
+      </div>
+      <h1>TikTok <em>Dashboard</em></h1>
+    </div>
+    <p class="sub">Panel de control · Automatización Zefoy</p>
+  </header>
+
+  <!-- URL Card -->
+  <section class="card" aria-label="Video de TikTok">
+    <p class="card-label">Video de TikTok</p>
+    <div class="url-row">
+      <input
+        id="url-input"
+        class="url-input"
+        type="url"
+        placeholder="https://www.tiktok.com/@usuario/video/…"
+        autocomplete="off"
+        spellcheck="false"
+      >
+    </div>
+    <div class="actions">
+      <button id="btn-check"   class="btn btn-secondary" onclick="checkServices()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Comprobar servicios
+      </button>
+      <button id="btn-start"  class="btn btn-primary"   onclick="startBot()"     disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        Iniciar
+      </button>
+      <button id="btn-stop"   class="btn btn-danger"    onclick="stopBot()"      disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+        Detener
+      </button>
+      <button id="btn-close"  class="btn btn-ghost"     onclick="closeBrowser()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Cerrar navegador
+      </button>
+    </div>
+  </section>
+
+  <!-- Services Card -->
+  <section class="card" aria-label="Servicios">
+    <p class="card-label">Servicios</p>
+    <div id="services-grid" class="services-grid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- Status Card -->
+  <section class="card" aria-label="Estado y logs">
+    <p class="card-label">Estado</p>
+    <div class="status-row">
+      <div class="status-pill">
+        <span id="status-dot" class="dot idle" role="status" aria-label="Estado del bot"></span>
+        <span id="status-text">Listo · esperando URL</span>
+      </div>
+      <div id="counter-pill" class="counter-pill" aria-live="polite">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        <span id="counter-num">0</span> enviados
+      </div>
+    </div>
+
+    <div class="cooldown-wrap" id="cooldown-wrap">
+      <div class="cooldown-label">
+        <span>Esperando cooldown…</span>
+        <span id="cooldown-timer">0s</span>
+      </div>
+      <div class="cooldown-track">
+        <div id="cooldown-fill" class="cooldown-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div id="logs" class="logs" aria-label="Registro de actividad" aria-live="polite">
+      <div class="log-line log-info">· Panel iniciado. Pega una URL de TikTok y comprueba los servicios.</div>
+    </div>
+  </section>
+
+  <footer>Proyecto propio · Solo uso educativo</footer>
+
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────
+const SERVICES = [
+  { id: 't-followers-button', name: 'Followers',      icon: followersIcon },
+  { id: 't-hearts-button',    name: 'Hearts',         icon: heartsIcon    },
+  { id: 't-chearts-button',   name: 'Comment Hearts', icon: commentIcon   },
+  { id: 't-views-button',     name: 'Views',          icon: viewsIcon     },
+  { id: 't-shares-button',    name: 'Shares',         icon: sharesIcon    },
+  { id: 't-favorites-button', name: 'Favorites',      icon: favsIcon      },
+  { id: 't-livesteam-button', name: 'Live Stream',    icon: liveIcon      },
+];
+
+let state = {
+  checked:  false,
+  selected: null,
+  running:  false,
+  paused:   false,
+  count:    0,
+  services: SERVICES.map(s => ({ ...s, status: 'unknown' })),  // unknown | online | offline
+};
+
+let cooldownTimer = null;
+
+// ─── SVG Icons ───────────────────────────────────────────
+function followersIcon() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+}
+function heartsIcon() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+}
+function commentIcon() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M8 10h.01M12 10h.01M16 10h.01" stroke-linecap="round"/></svg>`;
+}
+function viewsIcon() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
+function sharesIcon() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>`;
+}
+function favsIcon() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`;
+}
+function liveIcon() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l5 5M7 2L2 7M12 11v5M9 14l3-3 3 3"/></svg>`;
+}
+
+// ─── Build services grid ──────────────────────────────────
+function renderServices() {
+  const grid = document.getElementById('services-grid');
+  grid.innerHTML = state.services.map((s, i) => {
+    const sel  = state.selected === i ? 'selected' : '';
+    const sts  = s.status === 'online' ? 'online' : s.status === 'offline' ? 'offline' : '';
+    const cls  = `svc ${sel} ${sts}`.trim();
+    const badge = s.status === 'online'   ? `<span class="svc-badge badge-online">ONLINE</span>`
+                : s.status === 'offline'  ? `<span class="svc-badge badge-offline">OFFLINE</span>`
+                : `<span class="svc-badge badge-loading">—</span>`;
+    return `
+      <div class="${cls}" role="button" tabindex="${s.status === 'offline' ? '-1' : '0'}"
+           aria-label="${s.name}: ${s.status}" onclick="selectService(${i})"
+           onkeydown="if(event.key==='Enter'||event.key===' ')selectService(${i})">
+        <div class="svc-icon">${s.icon()}</div>
+        <div class="svc-name">${s.name}</div>
+        ${badge}
+      </div>`;
+  }).join('');
+}
+
+// ─── Logging ──────────────────────────────────────────────
+function log(msg, type = 'info') {
+  const logs = document.getElementById('logs');
+  const line = document.createElement('div');
+  line.className = `log-line log-${type}`;
+  const timestamp = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const prefix = type === 'ok' ? '[+]' : type === 'warn' ? '[~]' : type === 'err' ? '[!]' : '[ ]';
+  line.textContent = `${prefix} ${timestamp}  ${msg}`;
+  logs.appendChild(line);
+  logs.scrollTop = logs.scrollHeight;
+}
+
+// ─── Status / dot ─────────────────────────────────────────
+function setStatus(text, dotClass) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = `dot ${dotClass}`;
+}
+
+// ─── Toast ────────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span class="toast-dot ${type}"></span>${msg}`;
+  c.appendChild(t);
+  requestAnimationFrame(() => { t.classList.add('show'); });
+  setTimeout(() => {
+    t.classList.replace('show', 'hide');
+    setTimeout(() => t.remove(), 300);
+  }, 3200);
+}
+
+// ─── Validate URL ─────────────────────────────────────────
+function validateTikTokUrl(url) {
+  return /tiktok\.com\/@[^/]+\/video\/\d+/.test(url);
+}
+
+// ─── Check services ──────────────────────────────────────
+function checkServices() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) { toast('Pega primero una URL de TikTok', 'err'); return; }
+  if (!validateTikTokUrl(url)) { toast('URL de TikTok no válida', 'err'); return; }
+
+  document.getElementById('btn-check').disabled = true;
+  document.getElementById('btn-start').disabled = true;
+  setStatus('Abriendo Chrome…', 'idle');
+  log('Chrome iniciado');
+  log('Esperando captcha en la ventana de Chrome…', 'warn');
+
+  // Mark all as loading
+  state.services = state.services.map(s => ({ ...s, status: 'loading' }));
+  renderServices();
+  document.querySelectorAll('.svc').forEach(el => el.classList.add('loading'));
+
+  // Simulate async check (would be a real fetch to /api/check)
+  simulateCheck();
+}
+
+function simulateCheck() {
+  const results = [
+    { delay: 1200, idx: 0, online: false },
+    { delay: 1800, idx: 1, online: true  },
+    { delay: 2000, idx: 2, online: false },
+    { delay: 2300, idx: 3, online: true  },
+    { delay: 2500, idx: 4, online: false },
+    { delay: 2800, idx: 5, online: true  },
+    { delay: 3000, idx: 6, online: false },
+  ];
+
+  results.forEach(r => {
+    setTimeout(() => {
+      state.services[r.idx].status = r.online ? 'online' : 'offline';
+      renderServices();
+      document.querySelectorAll('.svc').forEach(el => el.classList.remove('loading'));
+    }, r.delay);
+  });
+
+  setTimeout(() => {
+    document.getElementById('btn-check').disabled = false;
+    setStatus('Servicios actualizados', 'ready');
+    log('Captcha resuelto', 'ok');
+    log('Estado de servicios actualizado', 'ok');
+    state.checked = true;
+    toast('Servicios comprobados');
+  }, 3200);
+}
+
+// ─── Select service ───────────────────────────────────────
+function selectService(i) {
+  if (!state.checked) { toast('Comprueba los servicios primero', 'info'); return; }
+  if (state.services[i].status !== 'online') return;
+  if (state.running) { toast('Detén el bot antes de cambiar de servicio', 'err'); return; }
+  state.selected = i;
+  renderServices();
+  document.getElementById('btn-start').disabled = false;
+  log(`Servicio seleccionado: ${state.services[i].name}`, 'info');
+}
+
+// ─── Start bot ────────────────────────────────────────────
+function startBot() {
+  if (state.selected === null) { toast('Elige un servicio primero', 'err'); return; }
+  const url = document.getElementById('url-input').value.trim();
+  if (!validateTikTokUrl(url)) { toast('URL no válida', 'err'); return; }
+
+  state.running = true;
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-stop').disabled  = false;
+  document.getElementById('btn-check').disabled = true;
+
+  const svc = state.services[state.selected].name;
+  setStatus(`Enviando ${svc}…`, 'running');
+  log(`URL cargada: ${url.slice(0, 55)}…`);
+  log(`Iniciando servicio: ${svc}`, 'warn');
+
+  simulateSend();
+}
+
+function simulateSend() {
+  if (!state.running) return;
+  const svc = state.services[state.selected].name;
+
+  // Send attempt
+  setTimeout(() => {
+    if (!state.running) return;
+    log(`${svc} enviado`, 'ok');
+    state.count++;
+    updateCounter();
+    toast(`${svc} enviado #${state.count}`, 'ok');
+
+    // Cooldown
+    const waitSec = 120 + Math.floor(Math.random() * 60);
+    startCooldown(waitSec, () => {
+      if (state.running) simulateSend();
+    });
+  }, 900);
+}
+
+// ─── Cooldown ─────────────────────────────────────────────
+function startCooldown(totalSec, onDone) {
+  const wrap  = document.getElementById('cooldown-wrap');
+  const fill  = document.getElementById('cooldown-fill');
+  const timer = document.getElementById('cooldown-timer');
+  wrap.classList.add('visible');
+
+  let remaining = totalSec;
+  const svc = state.services[state.selected].name;
+  setStatus(`Cooldown — esperando ${fmt(remaining)}`, 'waiting');
+  log(`Esperando ${fmt(remaining)}…`, 'warn');
+
+  fill.style.width = '100%';
+  timer.textContent = fmt(remaining);
+
+  clearInterval(cooldownTimer);
+  cooldownTimer = setInterval(() => {
+    if (!state.running) { clearInterval(cooldownTimer); return; }
+    remaining--;
+    timer.textContent = fmt(remaining);
+    fill.style.width  = `${(remaining / totalSec) * 100}%`;
+
+    if (remaining <= 0) {
+      clearInterval(cooldownTimer);
+      wrap.classList.remove('visible');
+      setStatus(`Enviando ${svc}…`, 'running');
+      onDone();
+    }
+  }, 1000);
+}
+
+function fmt(s) {
+  if (s >= 60) return `${Math.floor(s/60)}m ${s%60}s`;
+  return `${s}s`;
+}
+
+// ─── Stop bot ─────────────────────────────────────────────
+function stopBot() {
+  state.running = false;
+  clearInterval(cooldownTimer);
+  document.getElementById('cooldown-wrap').classList.remove('visible');
+  document.getElementById('btn-stop').disabled  = true;
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-check').disabled = false;
+  setStatus('Detenido', 'ready');
+  log('Bot detenido por el usuario', 'warn');
+  toast('Bot detenido', 'info');
+}
+
+// ─── Close browser ────────────────────────────────────────
+function closeBrowser() {
+  if (state.running) stopBot();
+  state.checked  = false;
+  state.selected = null;
+  state.services = state.services.map(s => ({ ...s, status: 'unknown' }));
+  renderServices();
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-check').disabled = false;
+  setStatus('Listo · esperando URL', 'idle');
+  log('Chrome cerrado', 'warn');
+  toast('Navegador cerrado', 'info');
+}
+
+// ─── Counter ──────────────────────────────────────────────
+function updateCounter() {
+  const pill = document.getElementById('counter-pill');
+  document.getElementById('counter-num').textContent = state.count;
+  pill.classList.add('visible');
+}
+
+// ─── Init ─────────────────────────────────────────────────
+renderServices();
+</script>
