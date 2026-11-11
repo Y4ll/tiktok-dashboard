@@ -135,6 +135,12 @@ class BotEngine:
         thread = Thread(target=self._run_loop, args=(service_key, video_url), daemon=True)
         thread.start()
 
+    def _get_container(self):
+        """Obtiene el container activo (re-busca cada vez para evitar stale elements)."""
+        return self._wait_for_element(
+            By.CSS_SELECTOR, "div.col-sm-5.col-xs-12.p-1.container:not(.nonec)"
+        )
+
     def _run_loop(self, service_key: str, video_url: str):
         try:
             if not self.driver:
@@ -143,38 +149,46 @@ class BotEngine:
             info = self.SERVICES[service_key]
             self.log(f"[~] Iniciando servicio: {info['title']}")
 
-            # Click en el servicio
+            # Click en el tab del servicio
             self._wait_for_element(By.CLASS_NAME, info["selector"]).click()
             sleep(1)
 
-            container = self._wait_for_element(
-                By.CSS_SELECTOR, "div.col-sm-5.col-xs-12.p-1.container:not(.nonec)"
-            )
-
+            # Poner la URL en el input — re-buscar container siempre
+            container = self._get_container()
             input_element = container.find_element(By.TAG_NAME, "input")
             input_element.clear()
             input_element.send_keys(video_url)
-            self.log(f"[+] URL cargada: {video_url}")
+            self.log(f"[+] URL cargada: {video_url[:55]}...")
 
             while not self.stop_event.is_set():
                 try:
+                    # Re-buscar container en cada iteración para evitar stale element
+                    container = self._get_container()
+
+                    # Click Send
                     container.find_element(By.CSS_SELECTOR, "button.btn.btn-primary").click()
                     sleep(3)
 
+                    # Re-buscar tras el click
+                    container = self._get_container()
+
+                    # Click confirm (btn-dark aparece tras el envío)
                     try:
                         container.find_element(By.CSS_SELECTOR, "button.btn.btn-dark").click()
-                        self.log(f"[+] {info['title']} enviado")
+                        self.log(f"[+] {info['title']} enviado correctamente")
                     except NoSuchElementException:
-                        pass
+                        self.log(f"[~] {info['title']} enviado (sin confirmación)")
 
-                    sleep(2)
+                    sleep(3)
+
+                    # Re-buscar para leer el timer
+                    container = self._get_container()
                     remaining = self._get_remaining_time(container)
 
                     if remaining:
                         minutes = remaining // 60
                         seconds = remaining % 60
                         self.log(f"[~] Esperando {minutes}m {seconds}s...")
-                        # Esperar en trozos para poder detener
                         for _ in range(remaining):
                             if self.stop_event.is_set():
                                 break
